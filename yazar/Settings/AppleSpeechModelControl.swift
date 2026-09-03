@@ -22,7 +22,10 @@ struct AppleSpeechModelControl: View {
                 Button("Download", action: speechModel.download)
                     .buttonStyle(.bordered)
             case .installed:
+                // Icon only: the row is narrow enough that the word would eat
+                // the language name. The row's help text names the state.
                 GrantedLabel("Downloaded")
+                    .labelStyle(.iconOnly)
             }
         }
         .help(modelDescription)
