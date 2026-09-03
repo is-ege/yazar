@@ -40,7 +40,7 @@ final class MeetingNotesMaker {
         let transcript = meeting.transcript
         let maker = OpenRouterNoteMaker(
             client: OpenRouterClient(
-                apiKey: settings.apiKey(for: .openRouter),
+                apiKey: settings.transcription.apiKey(for: .openRouter),
                 model: settings.openRouterNotesModel
             )
         )
