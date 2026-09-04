@@ -186,7 +186,7 @@ final class Yazar {
         }
 
         let route = settings.transcription.dictationRoute(for: KeyboardInputSource.current)
-        let transcriber = settings.transcription.makeTranscriber(for: route)
+        let transcriber = settings.makeTranscriber(for: route)
         state = .transcribing
         transcriptionTask?.cancel()
         transcriptionTask = Task { [weak self] in

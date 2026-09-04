@@ -7,10 +7,7 @@ import Testing
 struct TranscriptionSettingsTests {
     private static func makeSettings() -> TranscriptionSettings {
         let suiteName = "transcription-tests-\(UUID().uuidString)"
-        return TranscriptionSettings(
-            defaults: UserDefaults(suiteName: suiteName)!,
-            credentials: Credentials()
-        )
+        return TranscriptionSettings(defaults: UserDefaults(suiteName: suiteName)!)
     }
 
     private static func source(
@@ -155,12 +152,12 @@ struct TranscriptionSettingsTests {
     func routingChoicesPersist() {
         let suiteName = "transcription-tests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
-        let settings = TranscriptionSettings(defaults: defaults, credentials: Credentials())
+        let settings = TranscriptionSettings(defaults: defaults)
         settings.isInputSourceRoutingEnabled = true
         settings.setModel(.appleSpeech, for: "abc")
         settings.setModel(.openRouter("turkish/model"), for: "turkish")
 
-        let reloaded = TranscriptionSettings(defaults: defaults, credentials: Credentials())
+        let reloaded = TranscriptionSettings(defaults: defaults)
 
         #expect(reloaded.isInputSourceRoutingEnabled)
         #expect(reloaded.model(for: "abc") == .appleSpeech)

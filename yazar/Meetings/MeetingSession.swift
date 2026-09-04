@@ -168,7 +168,7 @@ final class MeetingSession {
     /// and losing an hour of recording because a request failed would be the
     /// worse trade.
     private func startTranscribing(_ audio: MeetingAudio) {
-        let transcriber = settings.transcription.makeTranscriber(
+        let transcriber = settings.makeTranscriber(
             for: settings.transcription.defaultRoute
         )
         liveTranscript = ""

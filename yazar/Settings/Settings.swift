@@ -69,8 +69,8 @@ final class Settings {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         formatting = FormattingSettings(defaults: defaults)
+        transcription = TranscriptionSettings(defaults: defaults)
         credentials = Credentials()
-        transcription = TranscriptionSettings(defaults: defaults, credentials: credentials)
         openRouterNotesModel = defaults.string(forKey: Key.notesModel)
             ?? "nvidia/nemotron-3-ultra-550b-a55b:free"
         playSounds = defaults.object(forKey: Key.playSounds) == nil
@@ -92,5 +92,20 @@ final class Settings {
 #if DEBUG
         demoMode = defaults.bool(forKey: Key.demoMode)
 #endif
+    }
+
+    /// Builds the transcriber for one already-resolved route, binding its
+    /// language and any credential before asynchronous transcription begins.
+    func makeTranscriber(for route: TranscriptionRoute) -> any Transcriber {
+        switch route.model {
+        case .appleSpeech:
+            AppleSpeechTranscriber(language: route.language)
+        case .openRouter(let model):
+            OpenRouterTranscriber(
+                apiKey: credentials.key(for: .openRouter),
+                model: model,
+                language: route.language
+            )
+        }
     }
 }

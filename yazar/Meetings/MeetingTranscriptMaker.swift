@@ -36,7 +36,7 @@ final class MeetingTranscriptMaker {
         let ranges = Self.ranges(in: meeting, fileSize: store.audioByteCount(for: meeting))
         guard !ranges.isEmpty else { return }
 
-        let transcriber = settings.transcription.makeTranscriber(
+        let transcriber = settings.makeTranscriber(
             for: settings.transcription.defaultRoute
         )
         meeting.transcriptionFailure = nil

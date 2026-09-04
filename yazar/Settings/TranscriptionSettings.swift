@@ -16,7 +16,6 @@ final class TranscriptionSettings {
     }
 
     private let defaults: UserDefaults
-    private let credentials: Credentials
 
     var provider: TranscriptionProvider {
         didSet { defaults.set(provider.rawValue, forKey: Key.provider) }
@@ -63,9 +62,8 @@ final class TranscriptionSettings {
         }
     }
 
-    init(defaults: UserDefaults = .standard, credentials: Credentials) {
+    init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.credentials = credentials
         provider = defaults.string(forKey: Key.provider)
             .flatMap(TranscriptionProvider.init(rawValue:))
             ?? .openRouter
@@ -116,20 +114,6 @@ final class TranscriptionSettings {
             setModel(.appleSpeech, for: inputSourceID)
         case .openRouter:
             setModel(.openRouter(openRouterModel), for: inputSourceID)
-        }
-    }
-
-    /// Builds a transcriber with its language and any credential already bound.
-    func makeTranscriber(for route: TranscriptionRoute) -> any Transcriber {
-        switch route.model {
-        case .appleSpeech:
-            AppleSpeechTranscriber(language: route.language)
-        case .openRouter(let model):
-            OpenRouterTranscriber(
-                apiKey: credentials.key(for: .openRouter),
-                model: model,
-                language: route.language
-            )
         }
     }
 }

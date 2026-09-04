@@ -18,45 +18,38 @@ struct ModelRoutingRow: View {
                 .labelsHidden()
                 .frame(width: 124)
 
-                // A source following the default has no model of its own to
-                // edit, so it names what it inherits instead of offering a
-                // control that would silently pin it.
-                if isFollowingDefault {
-                    Text(inheritedModelName)
+                // Apple model status belongs to the effective route even when
+                // its provider is inherited. Showing it does not pin the source.
+                if case .appleSpeech = route.model {
+                    AppleSpeechModelControl(language: route.language)
+                        .frame(width: 172, alignment: .trailing)
+                } else if isFollowingDefault,
+                          case .openRouter(let model) = route.model {
+                    // An inherited OpenRouter model stays read-only because
+                    // editing it would silently turn inheritance into a pin.
+                    Text(model)
                         .lineLimit(1)
                         .foregroundStyle(.secondary)
                         .frame(width: 172, alignment: .trailing)
-                } else if selectedModel.provider == .openRouter {
+                } else {
                     TranscriptionModelMenu(
                         model: openRouterModelSelection,
                         accessibilityName: modelAccessibilityName
                     )
                     .frame(width: 172)
-                } else {
-                    AppleSpeechModelControl(language: inputSource.languageIdentifier)
-                        .frame(width: 172, alignment: .trailing)
                 }
             }
         }
     }
 
-    /// What this source transcribes with, whether it follows the fixed choice
-    /// or overrides it. The controls show the model that will actually run.
-    private var selectedModel: TranscriptionModel {
-        settings.model(for: inputSource.id)
+    /// The same model and language dictation will use. This row only appears
+    /// while routing is enabled, so route resolution includes the source.
+    private var route: TranscriptionRoute {
+        settings.dictationRoute(for: inputSource)
     }
 
     private var isFollowingDefault: Bool {
         settings.modelOverride(for: inputSource.id) == nil
-    }
-
-    /// Matches what the model menu shows for the same choice, so the row reads
-    /// the same whether the model is inherited or picked.
-    private var inheritedModelName: String {
-        switch selectedModel {
-        case .appleSpeech: TranscriptionProvider.appleSpeech.displayName
-        case .openRouter(let model): model
-        }
     }
 
     /// Picking a provider pins the source; picking Default releases it. The
@@ -72,7 +65,7 @@ struct ModelRoutingRow: View {
 
     private var openRouterModelSelection: Binding<String> {
         Binding {
-            if case .openRouter(let model) = selectedModel {
+            if case .openRouter(let model) = route.model {
                 return model
             }
             return settings.openRouterModel
