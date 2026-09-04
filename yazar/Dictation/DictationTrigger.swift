@@ -34,6 +34,22 @@ enum TriggerModifier: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// What the key reads as on a keycap. Sides are kept, because a trigger of
+    /// Left ⌘ drawn as plain ⌘ would name a combination the tap does not match.
+    var keycap: String {
+        switch self {
+        case .fn: "🌐"
+        case .leftControl: "L⌃"
+        case .rightControl: "R⌃"
+        case .leftOption: "L⌥"
+        case .rightOption: "R⌥"
+        case .leftCommand: "L⌘"
+        case .rightCommand: "R⌘"
+        case .leftShift: "L⇧"
+        case .rightShift: "R⇧"
+        }
+    }
+
     /// The bit set while this key is held. Fn has no side, so it uses the
     /// ordinary secondary-function flag; the rest come from IOLLEvent.h.
     var flagMask: UInt64 {
@@ -53,6 +69,12 @@ enum TriggerModifier: String, CaseIterable, Identifiable, Sendable {
     static func held(inRawFlags flags: UInt64) -> Set<TriggerModifier> {
         Set(allCases.filter { flags & $0.flagMask != 0 })
     }
+
+    /// One order for every place a combination is drawn or written, so a
+    /// half-recorded set reads the same way as the saved trigger it replaces.
+    static func ordered(_ modifiers: Set<TriggerModifier>) -> [TriggerModifier] {
+        modifiers.sorted { $0.rawValue < $1.rawValue }
+    }
 }
 
 /// The modifier combination held to dictate.
@@ -70,8 +92,7 @@ struct DictationTrigger: Hashable, Sendable {
     var usesFn: Bool { modifiers.contains(.fn) }
 
     var displayName: String {
-        modifiers
-            .sorted { $0.rawValue < $1.rawValue }
+        TriggerModifier.ordered(modifiers)
             .map(\.displayName)
             .joined(separator: " + ")
     }

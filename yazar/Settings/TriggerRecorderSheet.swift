@@ -30,14 +30,20 @@ struct TriggerRecorderSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text(prompt)
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(isValid ? .primary : .secondary)
-                .frame(maxWidth: .infinity, minHeight: 46)
-                .background(
-                    Color(nsColor: .controlBackgroundColor),
-                    in: RoundedRectangle(cornerRadius: 8)
-                )
+            Group {
+                if let prompt {
+                    Text(prompt)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.secondary)
+                } else {
+                    TriggerKeycaps(modifiers: captured, size: 15)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 46)
+            .background(
+                Color(nsColor: .controlBackgroundColor),
+                in: RoundedRectangle(cornerRadius: 8)
+            )
 
             HStack {
                 Spacer()
@@ -57,10 +63,11 @@ struct TriggerRecorderSheet: View {
         .onDisappear(perform: stopRecording)
     }
 
-    private var prompt: String {
+    /// Words only while the capture is not yet something we can save; once it
+    /// is, the keycaps say it.
+    private var prompt: String? {
         if captured.isEmpty { return "Hold a modifier key" }
-        guard isValid else { return "Two keys at most" }
-        return DictationTrigger(modifiers: captured).displayName
+        return isValid ? nil : "Two keys at most"
     }
 
     private func startRecording() {

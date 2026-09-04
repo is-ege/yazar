@@ -4,7 +4,6 @@ import SwiftUI
 struct DictationSettingsView: View {
     @Bindable var settings: Settings
     let yazar: Yazar
-    @State private var isRecordingTrigger = false
 
     private var audioInputs: [AudioInput] { AudioInput.available }
 
@@ -13,16 +12,9 @@ struct DictationSettingsView: View {
             SettingsSection("Activation") {
                 SettingsRow(
                     "Dictation key",
-                    description: "Hold \(settings.dictationTrigger.displayName) to record."
+                    description: "Hold it to dictate. Click to rebind."
                 ) {
-                    Button("Change…") { isRecordingTrigger = true }
-                        .buttonStyle(.bordered)
-                        .sheet(isPresented: $isRecordingTrigger) {
-                            TriggerRecorderSheet(
-                                trigger: $settings.dictationTrigger,
-                                yazar: yazar
-                            )
-                        }
+                    TriggerRecorder(trigger: $settings.dictationTrigger, yazar: yazar)
                 }
             }
 
