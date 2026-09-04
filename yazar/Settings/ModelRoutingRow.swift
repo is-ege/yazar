@@ -18,7 +18,15 @@ struct ModelRoutingRow: View {
                 .labelsHidden()
                 .frame(width: 124)
 
-                if selectedModel.provider == .openRouter {
+                // A source following the default has no model of its own to
+                // edit, so it names what it inherits instead of offering a
+                // control that would silently pin it.
+                if isFollowingDefault {
+                    Text(inheritedModelName)
+                        .lineLimit(1)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 172, alignment: .trailing)
+                } else if selectedModel.provider == .openRouter {
                     TranscriptionModelMenu(
                         model: openRouterModelSelection,
                         accessibilityName: modelAccessibilityName
@@ -36,6 +44,19 @@ struct ModelRoutingRow: View {
     /// or overrides it. The controls show the model that will actually run.
     private var selectedModel: TranscriptionModel {
         settings.model(for: inputSource.id)
+    }
+
+    private var isFollowingDefault: Bool {
+        settings.modelOverride(for: inputSource.id) == nil
+    }
+
+    /// Matches what the model menu shows for the same choice, so the row reads
+    /// the same whether the model is inherited or picked.
+    private var inheritedModelName: String {
+        switch selectedModel {
+        case .appleSpeech: TranscriptionProvider.appleSpeech.displayName
+        case .openRouter(let model): model
+        }
     }
 
     /// Picking a provider pins the source; picking Default releases it. The
@@ -61,10 +82,8 @@ struct ModelRoutingRow: View {
     }
 
     private var sourceDescription: String {
-        guard settings.modelOverride(for: inputSource.id) != nil else {
-            return "\(languageDescription) Follows the default model."
-        }
-        return languageDescription
+        guard isFollowingDefault else { return languageDescription }
+        return "\(languageDescription) Follows the default model."
     }
 
     private var languageDescription: String {

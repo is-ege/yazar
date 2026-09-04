@@ -7,7 +7,7 @@ struct TranscriptionSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            SettingsSection("Provider") {
+            SettingsSection("Default Provider") {
                 SettingsRow("Provider", description: settings.provider.summary) {
                     Picker("Provider", selection: $settings.provider) {
                         ForEach(TranscriptionProvider.allCases) { provider in

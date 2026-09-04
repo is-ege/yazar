@@ -9,7 +9,7 @@ struct SuggestedModel: Identifiable {
 
     static let all: [SuggestedModel] = [
         SuggestedModel(
-            id: "openai/gpt-transcribe",
+            id: "microsoft/mai-transcribe-2",
             summary: "Excellent accuracy and broad language support"
         ),
         SuggestedModel(

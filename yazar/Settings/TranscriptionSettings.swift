@@ -69,7 +69,7 @@ final class TranscriptionSettings {
         provider = defaults.string(forKey: Key.provider)
             .flatMap(TranscriptionProvider.init(rawValue:))
             ?? .openRouter
-        openRouterModel = defaults.string(forKey: Key.model) ?? "openai/whisper-1"
+        openRouterModel = defaults.string(forKey: Key.model) ?? "microsoft/mai-transcribe-2"
         language = defaults.string(forKey: Key.language) ?? ""
         isInputSourceRoutingEnabled = defaults.bool(forKey: Key.inputSourceRouting)
         modelsByInputSource = defaults.data(forKey: Key.modelsByInputSource)
