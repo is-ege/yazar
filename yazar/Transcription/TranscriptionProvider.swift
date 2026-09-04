@@ -11,6 +11,15 @@ nonisolated enum TranscriptionProvider: String, CaseIterable, Codable, Identifia
         }
     }
 
+    /// The credential this provider cannot transcribe without, or nil when it
+    /// runs entirely on this Mac.
+    var requiredKey: APIProvider? {
+        switch self {
+        case .appleSpeech: nil
+        case .openRouter: .openRouter
+        }
+    }
+
     /// What choosing this provider means for the user's audio.
     var summary: String {
         switch self {

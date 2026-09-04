@@ -14,7 +14,7 @@ enum FormattingRule: String, CaseIterable, Codable, Identifiable, Sendable {
     /// width for every row.
     var title: String {
         switch self {
-        case .lowercase: "Lowercase"
+        case .lowercase: "All lowercase"
         }
     }
 

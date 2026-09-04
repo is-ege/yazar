@@ -3,6 +3,8 @@ import SwiftUI
 /// Fixed transcription configuration and optional per-input-source routing.
 struct TranscriptionSettingsView: View {
     @Bindable var settings: TranscriptionSettings
+    let credentials: Credentials
+    @Binding var page: AppPage
     @State private var inputSources: [KeyboardInputSource] = []
 
     var body: some View {
@@ -32,6 +34,12 @@ struct TranscriptionSettingsView: View {
                         .frame(width: 220)
                     }
                 }
+
+                MissingKeyWarning(
+                    needs: settings.provider.requiredKey,
+                    credentials: credentials,
+                    page: $page
+                )
             }
 
             SettingsSection("Language") {
@@ -80,10 +88,24 @@ struct TranscriptionSettingsView: View {
                             ModelRoutingRow(settings: settings, inputSource: inputSource)
                         }
                     }
+
+                    MissingKeyWarning(
+                        needs: routedKey,
+                        credentials: credentials,
+                        page: $page
+                    )
                 }
             }
         }
         .onAppear(perform: loadInputSources)
+    }
+
+    /// A key a pinned input source needs that the default provider does not, so
+    /// the two sections never warn about the same missing key twice.
+    private var routedKey: APIProvider? {
+        inputSources
+            .compactMap { settings.modelOverride(for: $0.id)?.provider.requiredKey }
+            .first { $0 != settings.provider.requiredKey }
     }
 
     private func loadInputSources() {

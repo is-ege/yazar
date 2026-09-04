@@ -76,9 +76,7 @@ final class Settings {
         playSounds = defaults.object(forKey: Key.playSounds) == nil
             ? true
             : defaults.bool(forKey: Key.playSounds)
-        showRecordingTimer = defaults.object(forKey: Key.showRecordingTimer) == nil
-            ? true
-            : defaults.bool(forKey: Key.showRecordingTimer)
+        showRecordingTimer = defaults.bool(forKey: Key.showRecordingTimer)
         meetingsEnabled = defaults.bool(forKey: Key.meetingsEnabled)
         soundTheme = defaults.string(forKey: Key.soundTheme)
             .flatMap(SoundTheme.init(rawValue:))

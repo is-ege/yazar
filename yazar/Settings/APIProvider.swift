@@ -16,7 +16,7 @@ nonisolated enum APIProvider: String, CaseIterable, Identifiable, Sendable {
     var keyDescription: String {
         switch self {
         case .openRouter:
-            "Used for OpenRouter transcription and meeting notes. Stored in your Mac's Keychain."
+            "Used for OpenRouter. Stored in your Mac's Keychain."
         }
     }
 }
