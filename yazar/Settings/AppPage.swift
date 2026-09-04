@@ -1,7 +1,7 @@
 import Foundation
 
 enum AppPage: CaseIterable, Identifiable {
-    case dictation
+    case general
     case transcription
     case formatting
     case meetings
@@ -12,7 +12,7 @@ enum AppPage: CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .dictation: "Dictation"
+        case .general: "General"
         case .transcription: "Transcription"
         case .formatting: "Formatting"
         case .meetings: "Meetings (Beta)"
@@ -23,7 +23,7 @@ enum AppPage: CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .dictation: "waveform"
+        case .general: "waveform"
         case .transcription: "text.bubble"
         case .formatting: "textformat"
         case .meetings: "person.2.wave.2"

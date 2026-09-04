@@ -18,7 +18,7 @@ struct YazarView: View {
         yazar: Yazar,
         store: MeetingStore,
         session: MeetingSession,
-        selection: Binding<AppPage> = .constant(.dictation)
+        selection: Binding<AppPage> = .constant(.general)
     ) {
         self.settings = settings
         self.permissions = permissions
@@ -43,8 +43,8 @@ struct YazarView: View {
             ScrollView {
                 Group {
                     switch selection {
-                    case .dictation:
-                        DictationSettingsView(settings: settings, yazar: yazar)
+                    case .general:
+                        GeneralSettingsView(settings: settings, yazar: yazar)
                     case .transcription:
                         TranscriptionSettingsView(
                             settings: settings.transcription,

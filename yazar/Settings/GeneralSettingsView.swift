@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// How a dictation is captured and what it sounds like.
-struct DictationSettingsView: View {
+/// How dictation is triggered, captured, and what it sounds like.
+struct GeneralSettingsView: View {
     @Bindable var settings: Settings
     let yazar: Yazar
 

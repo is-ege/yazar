@@ -44,7 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private let notesMaker: MeetingNotesMaker
     private let transcriptMaker: MeetingTranscriptMaker
     private let meetingsWindow: MeetingsWindowController
-    private var selectedPage = AppPage.dictation
+    private var selectedPage = AppPage.general
     private var overlayPanel: OverlayPanel?
     private var appWindow: NSWindow?
 
@@ -234,7 +234,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 store: store,
                 session: session,
                 selection: Binding(
-                    get: { [weak self] in self?.selectedPage ?? .dictation },
+                    get: { [weak self] in self?.selectedPage ?? .general },
                     set: { [weak self] in self?.selectedPage = $0 }
                 )
             )
