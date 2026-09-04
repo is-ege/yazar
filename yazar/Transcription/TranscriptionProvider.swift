@@ -29,19 +29,10 @@ nonisolated enum TranscriptionProvider: String, CaseIterable, Codable, Identifia
         }
     }
 
-    /// Whether this provider needs a credential in the Keychain.
-    var needsAPIKey: Bool {
-        switch self {
-        case .appleSpeech: false
-        case .openRouter: true
-        }
-    }
-
     var languagePlaceholder: String {
         switch self {
         case .appleSpeech: "System language"
         case .openRouter: "Auto-detect"
         }
     }
-
 }

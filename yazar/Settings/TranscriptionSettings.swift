@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// Fixed transcription configuration, per-input-source overrides, and the
-/// credentials needed to turn a resolved route into a transcriber.
+/// Fixed transcription configuration and per-input-source overrides, resolved
+/// into the route one transcription runs with.
 @MainActor
 @Observable
 final class TranscriptionSettings {
@@ -10,11 +10,13 @@ final class TranscriptionSettings {
         static let provider = "transcriptionProvider"
         static let model = "model"
         static let language = "language"
-        static let modelRoutingEnabled = "modelRoutingEnabled"
+        /// Named for models when it shipped; it routes the language too.
+        static let inputSourceRouting = "modelRoutingEnabled"
         static let modelsByInputSource = "transcriptionModelsByInputSource"
     }
 
     private let defaults: UserDefaults
+    private let credentials: Credentials
 
     var provider: TranscriptionProvider {
         didSet { defaults.set(provider.rawValue, forKey: Key.provider) }
@@ -30,8 +32,12 @@ final class TranscriptionSettings {
         didSet { defaults.set(optionalLanguage, forKey: Key.language) }
     }
 
-    var isModelRoutingEnabled: Bool {
-        didSet { defaults.set(isModelRoutingEnabled, forKey: Key.modelRoutingEnabled) }
+    /// Whether the selected keyboard input source picks the model and the
+    /// language, rather than the fixed configuration above.
+    var isInputSourceRoutingEnabled: Bool {
+        didSet {
+            defaults.set(isInputSourceRoutingEnabled, forKey: Key.inputSourceRouting)
+        }
     }
 
     private var modelsByInputSource: [String: TranscriptionModel] {
@@ -39,17 +45,6 @@ final class TranscriptionSettings {
             guard let data = try? JSONEncoder().encode(modelsByInputSource) else { return }
             defaults.set(data, forKey: Key.modelsByInputSource)
         }
-    }
-
-    private(set) var apiKeys: [TranscriptionProvider: String] = [:]
-    private(set) var apiKeyError: String?
-
-    /// OpenRouter is currently the only provider with a credential. This stays
-    /// writable even when the fixed provider is Apple because a routed source
-    /// may still need it.
-    var openRouterAPIKey: String {
-        get { apiKey(for: .openRouter) }
-        set { setAPIKey(newValue, for: .openRouter) }
     }
 
     var optionalLanguage: String? {
@@ -68,59 +63,55 @@ final class TranscriptionSettings {
         }
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, credentials: Credentials) {
         self.defaults = defaults
+        self.credentials = credentials
         provider = defaults.string(forKey: Key.provider)
             .flatMap(TranscriptionProvider.init(rawValue:))
             ?? .openRouter
         openRouterModel = defaults.string(forKey: Key.model) ?? "openai/whisper-1"
         language = defaults.string(forKey: Key.language) ?? ""
-        isModelRoutingEnabled = defaults.bool(forKey: Key.modelRoutingEnabled)
+        isInputSourceRoutingEnabled = defaults.bool(forKey: Key.inputSourceRouting)
         modelsByInputSource = defaults.data(forKey: Key.modelsByInputSource)
             .flatMap {
                 try? JSONDecoder().decode([String: TranscriptionModel].self, from: $0)
             }
             ?? [:]
-
-        do {
-            try ProviderKeychain.migrateLegacyKey()
-            for provider in TranscriptionProvider.allCases where provider.needsAPIKey {
-                apiKeys[provider] = try ProviderKeychain.load(for: provider)
-            }
-            apiKeyError = nil
-        } catch {
-            apiKeyError = error.localizedDescription
-        }
     }
 
     /// Selects one route from a snapshot of the current input source. A missing
     /// source or language falls back to the fixed configuration without making
     /// callers handle an unconfigured state.
     func dictationRoute(for inputSource: KeyboardInputSource?) -> TranscriptionRoute {
-        guard isModelRoutingEnabled, let inputSource else { return defaultRoute }
+        guard isInputSourceRoutingEnabled, let inputSource else { return defaultRoute }
         return TranscriptionRoute(
             model: model(for: inputSource.id),
             language: inputSource.languageIdentifier ?? optionalLanguage
         )
     }
 
-    /// The choice a source inherits or overrides in the routing section.
+    /// The override stored for a source, or nil when it follows the fixed
+    /// choice. The routing row needs the difference; transcription does not.
+    func modelOverride(for inputSourceID: String) -> TranscriptionModel? {
+        modelsByInputSource[inputSourceID]
+    }
+
+    /// What a source transcribes with, override or not.
     func model(for inputSourceID: String) -> TranscriptionModel {
-        modelsByInputSource[inputSourceID] ?? defaultModel
+        modelOverride(for: inputSourceID) ?? defaultModel
     }
 
-    /// Stores only a real override. New sources and sources reset to the fixed
-    /// choice continue following that single fallback truth.
-    func setModel(_ model: TranscriptionModel, for inputSourceID: String) {
-        if model == defaultModel {
-            modelsByInputSource[inputSourceID] = nil
-        } else {
-            modelsByInputSource[inputSourceID] = model
-        }
+    /// Stores exactly what the user picked; nil returns the source to the fixed
+    /// choice. Matching today's default is not inheritance — a source pinned to
+    /// it has to stay put when the fixed choice changes.
+    func setModel(_ model: TranscriptionModel?, for inputSourceID: String) {
+        modelsByInputSource[inputSourceID] = model
     }
 
-    func setProvider(_ provider: TranscriptionProvider, for inputSourceID: String) {
+    func setProvider(_ provider: TranscriptionProvider?, for inputSourceID: String) {
         switch provider {
+        case nil:
+            setModel(nil, for: inputSourceID)
         case .appleSpeech:
             setModel(.appleSpeech, for: inputSourceID)
         case .openRouter:
@@ -135,25 +126,10 @@ final class TranscriptionSettings {
             AppleSpeechTranscriber(language: route.language)
         case .openRouter(let model):
             OpenRouterTranscriber(
-                apiKey: apiKey(for: .openRouter),
+                apiKey: credentials.key(for: .openRouter),
                 model: model,
                 language: route.language
             )
-        }
-    }
-
-    func apiKey(for provider: TranscriptionProvider) -> String {
-        apiKeys[provider] ?? ""
-    }
-
-    private func setAPIKey(_ key: String, for provider: TranscriptionProvider) {
-        guard apiKey(for: provider) != key else { return }
-        apiKeys[provider] = key
-        do {
-            try ProviderKeychain.save(key, for: provider)
-            apiKeyError = nil
-        } catch {
-            apiKeyError = error.localizedDescription
         }
     }
 }

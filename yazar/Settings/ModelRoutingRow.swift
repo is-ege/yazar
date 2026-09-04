@@ -9,34 +9,41 @@ struct ModelRoutingRow: View {
         SettingsRow(inputSource.name, description: sourceDescription) {
             HStack(spacing: 8) {
                 Picker(providerAccessibilityName, selection: providerSelection) {
+                    Text("Default").tag(TranscriptionProvider?.none)
+                    Divider()
                     ForEach(TranscriptionProvider.allCases) { provider in
-                        Text(provider.displayName).tag(provider)
+                        Text(provider.displayName).tag(TranscriptionProvider?.some(provider))
                     }
                 }
                 .labelsHidden()
-                .frame(width: 112)
+                .frame(width: 124)
 
                 if selectedModel.provider == .openRouter {
                     TranscriptionModelMenu(
                         model: openRouterModelSelection,
                         accessibilityName: modelAccessibilityName
                     )
-                    .frame(width: 184)
+                    .frame(width: 172)
                 } else {
                     AppleSpeechModelControl(language: inputSource.languageIdentifier)
-                        .frame(width: 184, alignment: .trailing)
+                        .frame(width: 172, alignment: .trailing)
                 }
             }
         }
     }
 
+    /// What this source transcribes with, whether it follows the fixed choice
+    /// or overrides it. The controls show the model that will actually run.
     private var selectedModel: TranscriptionModel {
         settings.model(for: inputSource.id)
     }
 
-    private var providerSelection: Binding<TranscriptionProvider> {
+    /// Picking a provider pins the source; picking Default releases it. The
+    /// selection is the stored override, not the resolved model, so a source
+    /// pinned to today's fixed choice still reads as pinned.
+    private var providerSelection: Binding<TranscriptionProvider?> {
         Binding {
-            selectedModel.provider
+            settings.modelOverride(for: inputSource.id)?.provider
         } set: { provider in
             settings.setProvider(provider, for: inputSource.id)
         }
@@ -54,6 +61,13 @@ struct ModelRoutingRow: View {
     }
 
     private var sourceDescription: String {
+        guard settings.modelOverride(for: inputSource.id) != nil else {
+            return "\(languageDescription) Follows the default model."
+        }
+        return languageDescription
+    }
+
+    private var languageDescription: String {
         guard let language = inputSource.languageIdentifier else {
             return "No intended language; uses the fixed language setting."
         }

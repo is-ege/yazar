@@ -7,7 +7,10 @@ import Testing
 struct TranscriptionSettingsTests {
     private static func makeSettings() -> TranscriptionSettings {
         let suiteName = "transcription-tests-\(UUID().uuidString)"
-        return TranscriptionSettings(defaults: UserDefaults(suiteName: suiteName)!)
+        return TranscriptionSettings(
+            defaults: UserDefaults(suiteName: suiteName)!,
+            credentials: Credentials()
+        )
     }
 
     private static func source(
@@ -21,11 +24,11 @@ struct TranscriptionSettingsTests {
         )
     }
 
-    @Test("Model routing starts disabled")
-    func modelRoutingStartsDisabled() {
+    @Test("Input source routing starts disabled")
+    func inputSourceRoutingStartsDisabled() {
         let settings = Self.makeSettings()
 
-        #expect(!settings.isModelRoutingEnabled)
+        #expect(!settings.isInputSourceRoutingEnabled)
     }
 
     @Test("Disabled routing always uses the fixed route")
@@ -48,7 +51,7 @@ struct TranscriptionSettingsTests {
         settings.openRouterModel = "fixed/model"
         settings.setModel(.appleSpeech, for: "abc")
         settings.setModel(.openRouter("turkish/model"), for: "turkish")
-        settings.isModelRoutingEnabled = true
+        settings.isInputSourceRoutingEnabled = true
 
         #expect(
             settings.dictationRoute(for: Self.source(id: "abc", language: "en"))
@@ -67,7 +70,7 @@ struct TranscriptionSettingsTests {
         settings.openRouterModel = "fixed/model"
         settings.setModel(.appleSpeech, for: "abc")
         settings.setModel(.openRouter("alternate/model"), for: "us")
-        settings.isModelRoutingEnabled = true
+        settings.isInputSourceRoutingEnabled = true
 
         #expect(
             settings.dictationRoute(for: Self.source(id: "abc"))
@@ -84,7 +87,7 @@ struct TranscriptionSettingsTests {
         let settings = Self.makeSettings()
         settings.provider = .appleSpeech
         settings.language = "de"
-        settings.isModelRoutingEnabled = true
+        settings.isInputSourceRoutingEnabled = true
 
         let route = settings.dictationRoute(for: Self.source(id: "turkish", language: "tr"))
 
@@ -98,7 +101,7 @@ struct TranscriptionSettingsTests {
         settings.openRouterModel = "fixed/model"
         settings.language = "de"
         settings.setModel(.appleSpeech, for: "unicode")
-        settings.isModelRoutingEnabled = true
+        settings.isInputSourceRoutingEnabled = true
 
         let route = settings.dictationRoute(for: Self.source(id: "unicode", language: nil))
 
@@ -111,7 +114,7 @@ struct TranscriptionSettingsTests {
         settings.provider = .openRouter
         settings.openRouterModel = "fixed/model"
         settings.language = "de"
-        settings.isModelRoutingEnabled = true
+        settings.isInputSourceRoutingEnabled = true
 
         #expect(
             settings.dictationRoute(for: nil)
@@ -119,13 +122,29 @@ struct TranscriptionSettingsTests {
         )
     }
 
-    @Test("Choosing the fixed model removes the redundant override")
-    func fixedModelRemovesOverride() {
+    @Test("A source pinned to the current fixed model keeps it when that changes")
+    func pinnedSourceSurvivesFixedModelChange() {
+        let settings = Self.makeSettings()
+        settings.provider = .openRouter
+        settings.openRouterModel = "first/model"
+        settings.setModel(.openRouter("first/model"), for: "abc")
+
+        settings.openRouterModel = "second/model"
+
+        #expect(settings.model(for: "abc") == .openRouter("first/model"))
+    }
+
+    @Test("Clearing an override returns the source to the fixed model")
+    func clearedOverrideFollowsFixedModel() {
         let settings = Self.makeSettings()
         settings.provider = .openRouter
         settings.openRouterModel = "first/model"
         settings.setModel(.appleSpeech, for: "abc")
-        settings.setModel(.openRouter("first/model"), for: "abc")
+
+        settings.setModel(nil, for: "abc")
+
+        #expect(settings.modelOverride(for: "abc") == nil)
+        #expect(settings.model(for: "abc") == .openRouter("first/model"))
 
         settings.openRouterModel = "second/model"
 
@@ -136,14 +155,14 @@ struct TranscriptionSettingsTests {
     func routingChoicesPersist() {
         let suiteName = "transcription-tests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
-        let settings = TranscriptionSettings(defaults: defaults)
-        settings.isModelRoutingEnabled = true
+        let settings = TranscriptionSettings(defaults: defaults, credentials: Credentials())
+        settings.isInputSourceRoutingEnabled = true
         settings.setModel(.appleSpeech, for: "abc")
         settings.setModel(.openRouter("turkish/model"), for: "turkish")
 
-        let reloaded = TranscriptionSettings(defaults: defaults)
+        let reloaded = TranscriptionSettings(defaults: defaults, credentials: Credentials())
 
-        #expect(reloaded.isModelRoutingEnabled)
+        #expect(reloaded.isInputSourceRoutingEnabled)
         #expect(reloaded.model(for: "abc") == .appleSpeech)
         #expect(reloaded.model(for: "turkish") == .openRouter("turkish/model"))
     }

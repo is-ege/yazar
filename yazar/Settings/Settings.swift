@@ -24,6 +24,10 @@ final class Settings {
     let formatting: FormattingSettings
     let transcription: TranscriptionSettings
 
+    /// Shared by transcription and meeting notes, which authenticate against
+    /// the same account, so neither feature owns the key.
+    let credentials: Credentials
+
     /// The chat model that writes notes, kept apart from the transcription
     /// model because the two are never the same model.
     var openRouterNotesModel: String {
@@ -65,7 +69,8 @@ final class Settings {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         formatting = FormattingSettings(defaults: defaults)
-        transcription = TranscriptionSettings(defaults: defaults)
+        credentials = Credentials()
+        transcription = TranscriptionSettings(defaults: defaults, credentials: credentials)
         openRouterNotesModel = defaults.string(forKey: Key.notesModel)
             ?? "nvidia/nemotron-3-ultra-550b-a55b:free"
         playSounds = defaults.object(forKey: Key.playSounds) == nil

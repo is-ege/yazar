@@ -32,28 +32,6 @@ struct TranscriptionSettingsView: View {
                         .frame(width: 220)
                     }
                 }
-
-                if usesOpenRouter {
-                    RowDivider()
-
-                    SettingsRow(
-                        "API key",
-                        description: "Stored securely in your Mac's Keychain."
-                    ) {
-                        SecureField("Required", text: $settings.openRouterAPIKey)
-                            .textFieldStyle(.roundedBorder)
-                            .textContentType(.password)
-                            .frame(width: 220)
-                    }
-
-                    if let error = settings.apiKeyError {
-                        RowDivider()
-                        Label(error, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                    }
-                }
             }
 
             SettingsSection("Language") {
@@ -76,18 +54,18 @@ struct TranscriptionSettingsView: View {
                 }
             }
 
-            SettingsSection("Model Routing") {
+            SettingsSection("Input Source Routing") {
                 SettingsRow(
-                    "Enable model routing",
-                    description: "Choose a transcription provider and model for each keyboard input source."
+                    "Enable routing",
+                    description: "Choose a provider and model for each keyboard input source, and transcribe in that source's own language."
                 ) {
-                    Toggle("Enable model routing", isOn: $settings.isModelRoutingEnabled)
+                    Toggle("Enable routing", isOn: $settings.isInputSourceRoutingEnabled)
                         .labelsHidden()
                         .toggleStyle(.switch)
                         .controlSize(.small)
                 }
 
-                if settings.isModelRoutingEnabled {
+                if settings.isInputSourceRoutingEnabled {
                     if inputSources.isEmpty {
                         RowDivider()
                         Label(
@@ -106,14 +84,6 @@ struct TranscriptionSettingsView: View {
             }
         }
         .onAppear(perform: loadInputSources)
-    }
-
-    private var usesOpenRouter: Bool {
-        if settings.provider == .openRouter { return true }
-        guard settings.isModelRoutingEnabled else { return false }
-        return inputSources.contains {
-            settings.model(for: $0.id).provider == .openRouter
-        }
     }
 
     private func loadInputSources() {

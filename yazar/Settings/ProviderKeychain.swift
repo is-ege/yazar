@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-/// One Keychain item per provider that needs a credential.
+/// One Keychain item per service Yazar holds a key for.
 ///
 /// Yazar first shipped a single slot — service "ai.yazar.openrouter", account
 /// "api-key" — which could only ever hold one provider's key. Migration moves
@@ -11,12 +11,12 @@ enum ProviderKeychain {
     private static let legacyService = "ai.yazar.openrouter"
     private static let legacyAccount = "api-key"
 
-    static func load(for provider: TranscriptionProvider) throws -> String {
+    static func load(for provider: APIProvider) throws -> String {
         guard let data = try read(service: service, account: provider.rawValue) else { return "" }
         return String(decoding: data, as: UTF8.self)
     }
 
-    static func save(_ value: String, for provider: TranscriptionProvider) throws {
+    static func save(_ value: String, for provider: APIProvider) throws {
         if value.isEmpty {
             try delete(service: service, account: provider.rawValue)
         } else {
@@ -26,7 +26,7 @@ enum ProviderKeychain {
 
     static func migrateLegacyKey() throws {
         guard let legacy = try read(service: legacyService, account: legacyAccount) else { return }
-        let account = TranscriptionProvider.openRouter.rawValue
+        let account = APIProvider.openRouter.rawValue
         // A key already stored in the provider layout wins; the old item is stale.
         if try read(service: service, account: account) == nil {
             try write(legacy, service: service, account: account)

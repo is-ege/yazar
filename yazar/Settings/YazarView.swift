@@ -55,6 +55,8 @@ struct YazarView: View {
                             store: store,
                             session: session
                         )
+                    case .providers:
+                        ProvidersSettingsView(credentials: settings.credentials)
                     case .systemAccess:
                         SystemAccessSettingsView(
                             permissions: permissions,
