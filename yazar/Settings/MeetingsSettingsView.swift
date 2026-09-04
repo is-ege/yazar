@@ -25,7 +25,7 @@ struct MeetingsSettingsView: View {
                 SettingsSection("Notes") {
                     SettingsRow(
                         "Model",
-                        description: "OpenRouter model that writes the notes. Uses the same API key as transcription."
+                        description: "OpenRouter model that writes the notes. Uses the OpenRouter key from the Providers page."
                     ) {
                         TextField("Required", text: $settings.openRouterNotesModel)
                             .textFieldStyle(.roundedBorder)

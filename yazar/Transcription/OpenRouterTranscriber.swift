@@ -11,10 +11,11 @@ nonisolated struct OpenRouterTranscriber: Transcriber {
 
     let apiKey: String
     let model: String
+    let language: String?
 
-    func transcribe(_ recording: Recording, language: String?) async throws -> String {
+    func transcribe(_ recording: Recording) async throws -> String {
         try await withTimeout(Self.dictationTimeout) {
-            try await performRequest(recording.wavData, language: language)
+            try await performRequest(recording.wavData)
         }
     }
 
@@ -24,21 +25,18 @@ nonisolated struct OpenRouterTranscriber: Transcriber {
     /// transcript is being appended to as it arrives, so ordering is the whole
     /// contract. Chunk boundaries also lose the context either side of them,
     /// which is the price of not waiting until the meeting ends to see anything.
-    func transcribe(
-        _ audio: MeetingAudio,
-        language: String?
-    ) -> AsyncThrowingStream<TranscriptUpdate, any Error> {
+    func transcribe(_ audio: MeetingAudio) -> AsyncThrowingStream<TranscriptUpdate, any Error> {
         AsyncThrowingStream { continuation in
             let work = Task {
                 var chunker = AudioChunker()
                 do {
                     for try await samples in audio {
                         for chunk in chunker.append(samples) {
-                            try await send(chunk, language: language, to: continuation)
+                            try await send(chunk, to: continuation)
                         }
                     }
                     if let last = chunker.flush() {
-                        try await send(last, language: language, to: continuation)
+                        try await send(last, to: continuation)
                     }
                     continuation.finish()
                 } catch {
@@ -51,7 +49,6 @@ nonisolated struct OpenRouterTranscriber: Transcriber {
 
     private func send(
         _ chunk: Data,
-        language: String?,
         to continuation: AsyncThrowingStream<TranscriptUpdate, any Error>.Continuation
     ) async throws {
         let recording = Recording(pcm16: chunk)
@@ -60,7 +57,7 @@ nonisolated struct OpenRouterTranscriber: Transcriber {
         // transcript says nothing.
         guard recording.containsSpeech else { return }
         let text = try await withTimeout(Self.chunkTimeout) {
-            try await performRequest(recording.wavData, language: language)
+            try await performRequest(recording.wavData)
         }
         guard !text.isEmpty else { return }
         // Nothing here is provisional: a chunk comes back finished or not at all.
@@ -87,7 +84,7 @@ nonisolated struct OpenRouterTranscriber: Transcriber {
         }
     }
 
-    private func performRequest(_ wav: Data, language: String?) async throws -> String {
+    private func performRequest(_ wav: Data) async throws -> String {
         guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw OpenRouterTranscriberError.missingAPIKey
         }

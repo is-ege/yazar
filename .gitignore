@@ -1,6 +1,7 @@
 # Xcode user state
 xcuserdata/
 *.xcuserstate
+buildServer.json
 
 # Build output
 build/

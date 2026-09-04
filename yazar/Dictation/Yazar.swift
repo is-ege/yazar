@@ -185,8 +185,8 @@ final class Yazar {
             return
         }
 
-        let transcriber = settings.transcriptionProvider.makeTranscriber(settings)
-        let language = settings.optionalLanguage
+        let route = settings.transcription.dictationRoute(for: KeyboardInputSource.current)
+        let transcriber = settings.makeTranscriber(for: route)
         state = .transcribing
         transcriptionTask?.cancel()
         transcriptionTask = Task { [weak self] in
@@ -197,10 +197,10 @@ final class Yazar {
                     try await Task.sleep(for: .seconds(2))
                     text = "This is a demo transcription from Yazar."
                 } else {
-                    text = try await transcriber.transcribe(recording, language: language)
+                    text = try await transcriber.transcribe(recording)
                 }
 #else
-                text = try await transcriber.transcribe(recording, language: language)
+                text = try await transcriber.transcribe(recording)
 #endif
                 try Task.checkCancellation()
                 self?.deliver(text, rules: rules, context: insertionContext)

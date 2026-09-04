@@ -15,6 +15,7 @@ I built it because the options I found were heavy Electron apps, paid, or both. 
 - Context-aware capitalization, punctuation, and spacing around the caret or selection
 - On-device transcription with Apple Speech
 - Configurable OpenRouter transcription models
+- Optional per-keyboard-input-source routing of the transcription provider, model, and language
 - Selectable transcription language and provider
 - Selectable audio input and status sound themes
 - OpenRouter API keys stored in the macOS Keychain
@@ -27,6 +28,7 @@ Yazar runs in the menu bar.
 - Release it to transcribe and paste the text.
 - Press Escape while recording or transcribing to cancel.
 - Use the menu bar icon to change the dictation key, transcription provider, model, language, microphone, or sounds.
+- In Settings → Transcription, enable Input Source Routing to choose a provider and model for each keyboard input source configured on your Mac. Yazar then uses the selected source's intended language for each dictation. Leave a source on Default to follow the provider and model above it.
 
 Yazar reads the active text field through macOS Accessibility and fits each transcription to the current caret or selection before pressing ⌘V. If the target does not expose its text context, Yazar pastes the original transcription unchanged. Every transcription still reaches the clipboard, so it remains available when the active app does not accept the synthetic shortcut.
 
@@ -45,7 +47,7 @@ When you select OpenRouter, Yazar sends each recording directly to OpenRouter fo
 1. Clone the repository.
 2. Open `yazar.xcodeproj` in Xcode.
 3. Select the `yazar` scheme and run the app.
-4. Choose Apple Speech or OpenRouter in Yazar Settings. Enter an OpenRouter API key if needed.
+4. Choose Apple Speech or OpenRouter in Yazar Settings. Enter an OpenRouter API key under Settings → Providers if needed.
 5. Grant Microphone and Accessibility access when prompted.
 6. If you keep the default 🌐 Globe dictation key, open System Settings → Keyboard and set “Press 🌐 key to” to “Do Nothing.” Choosing any other key in Yazar Settings → Dictation skips this step.
 

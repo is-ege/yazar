@@ -1,4 +1,4 @@
-enum TranscriptionProvider: String, CaseIterable, Identifiable, Sendable {
+nonisolated enum TranscriptionProvider: String, CaseIterable, Codable, Identifiable, Sendable {
     case appleSpeech
     case openRouter
 
@@ -29,33 +29,10 @@ enum TranscriptionProvider: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Whether this provider needs a credential in the Keychain.
-    var needsAPIKey: Bool {
-        switch self {
-        case .appleSpeech: false
-        case .openRouter: true
-        }
-    }
-
     var languagePlaceholder: String {
         switch self {
         case .appleSpeech: "System language"
         case .openRouter: "Auto-detect"
-        }
-    }
-
-    /// Builds the transcriber for one recording, reading whatever settings this
-    /// provider needs. The dictation flow asks for a transcriber and gets one, so
-    /// it never has to know that one provider takes an API key and another does not.
-    func makeTranscriber(_ settings: Settings) -> any Transcriber {
-        switch self {
-        case .appleSpeech:
-            AppleSpeechTranscriber()
-        case .openRouter:
-            OpenRouterTranscriber(
-                apiKey: settings.apiKey(for: self),
-                model: settings.openRouterModel
-            )
         }
     }
 }

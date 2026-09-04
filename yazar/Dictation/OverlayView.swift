@@ -21,9 +21,10 @@ struct OverlayView: View {
                 case .idle:
                     EmptyView()
                 case .warmingUp:
-                    Image(systemName: "waveform")
-                        .symbolEffect(.pulse)
-                        .foregroundStyle(.secondary)
+                    ProgressView()
+                        .controlSize(.small)
+                        .brightness(0.4)
+                        .accessibilityLabel("Preparing microphone")
                 case .recording:
                     recordingView
                 case .transcribing:

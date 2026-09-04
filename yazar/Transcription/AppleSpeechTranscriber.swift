@@ -3,18 +3,20 @@ import Foundation
 import Speech
 
 nonisolated struct AppleSpeechTranscriber: Transcriber {
+    let language: String?
+
     /// One-shot dictation, expressed as a stream of exactly one buffer.
     ///
     /// The analyzer setup lives in `stream` and is not duplicated here: dictation
     /// is a meeting that ends immediately, and the only difference that matters is
     /// the preset. Dictation keeps `.transcription`, which reports finalized
     /// results only, because nothing on screen shows a partial dictation.
-    func transcribe(_ recording: Recording, language: String?) async throws -> String {
+    func transcribe(_ recording: Recording) async throws -> String {
         guard !recording.pcm16.isEmpty else { return "" }
 
         var text = ""
         let audio = MeetingAudio(source: .buffer(recording.pcm16))
-        for try await update in stream(audio, language: language, preset: .transcription) {
+        for try await update in stream(audio, preset: .transcription) {
             text += update.finalized
         }
         // The stream ends quietly when the consuming task is cancelled, so the
@@ -25,11 +27,8 @@ nonisolated struct AppleSpeechTranscriber: Transcriber {
 
     /// Live transcription for a meeting, which uses the progressive preset so the
     /// window can show the sentence being spoken rather than only settled text.
-    func transcribe(
-        _ audio: MeetingAudio,
-        language: String?
-    ) -> AsyncThrowingStream<TranscriptUpdate, any Error> {
-        stream(audio, language: language, preset: .progressiveTranscription)
+    func transcribe(_ audio: MeetingAudio) -> AsyncThrowingStream<TranscriptUpdate, any Error> {
+        stream(audio, preset: .progressiveTranscription)
     }
 
     /// Drives one `SpeechAnalyzer` session for as long as `audio` lasts.
@@ -40,7 +39,6 @@ nonisolated struct AppleSpeechTranscriber: Transcriber {
     /// itself sits between the two until the input sequence ends.
     private func stream(
         _ audio: MeetingAudio,
-        language: String?,
         preset: SpeechTranscriber.Preset
     ) -> AsyncThrowingStream<TranscriptUpdate, any Error> {
         AsyncThrowingStream { continuation in

@@ -36,8 +36,9 @@ final class MeetingTranscriptMaker {
         let ranges = Self.ranges(in: meeting, fileSize: store.audioByteCount(for: meeting))
         guard !ranges.isEmpty else { return }
 
-        let transcriber = settings.transcriptionProvider.makeTranscriber(settings)
-        let language = settings.optionalLanguage
+        let transcriber = settings.makeTranscriber(
+            for: settings.transcription.defaultRoute
+        )
         meeting.transcriptionFailure = nil
         store.save(meeting)
 
@@ -49,8 +50,7 @@ final class MeetingTranscriptMaker {
                     texts[index] = try await Self.transcribe(
                         url,
                         range: range,
-                        with: transcriber,
-                        language: language
+                        with: transcriber
                     )
                 } catch {
                     NSLog(
@@ -91,12 +91,11 @@ final class MeetingTranscriptMaker {
     private static func transcribe(
         _ url: URL,
         range: Range<Int>,
-        with transcriber: any Transcriber,
-        language: String?
+        with transcriber: any Transcriber
     ) async throws -> String {
         var text = ""
         let audio = MeetingAudio(source: .range(url, range))
-        for try await update in transcriber.transcribe(audio, language: language) {
+        for try await update in transcriber.transcribe(audio) {
             text += update.finalized
         }
         // The reader throws into the consuming loop, so an unreadable file and

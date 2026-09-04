@@ -57,7 +57,7 @@ final class NotesComposer {
         guard canGenerate else { return }
         let maker = OpenRouterNoteMaker(
             client: OpenRouterClient(
-                apiKey: settings.apiKey(for: .openRouter),
+                apiKey: settings.credentials.key(for: .openRouter),
                 model: settings.openRouterNotesModel
             )
         )

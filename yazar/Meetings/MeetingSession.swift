@@ -168,14 +168,15 @@ final class MeetingSession {
     /// and losing an hour of recording because a request failed would be the
     /// worse trade.
     private func startTranscribing(_ audio: MeetingAudio) {
-        let transcriber = settings.transcriptionProvider.makeTranscriber(settings)
-        let language = settings.optionalLanguage
+        let transcriber = settings.makeTranscriber(
+            for: settings.transcription.defaultRoute
+        )
         liveTranscript = ""
         liveVolatileText = ""
         transcriptionFailure = nil
         transcriptionTask = Task { [weak self] in
             do {
-                for try await update in transcriber.transcribe(audio, language: language) {
+                for try await update in transcriber.transcribe(audio) {
                     guard let self else { return }
                     liveTranscript += update.finalized
                     liveVolatileText = update.volatile
