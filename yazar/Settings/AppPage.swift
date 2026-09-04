@@ -15,7 +15,7 @@ enum AppPage: CaseIterable, Identifiable {
         case .dictation: "Dictation"
         case .transcription: "Transcription"
         case .formatting: "Formatting"
-        case .meetings: "Meetings"
+        case .meetings: "Meetings (Beta)"
         case .providers: "Providers"
         case .systemAccess: "System Access"
         }

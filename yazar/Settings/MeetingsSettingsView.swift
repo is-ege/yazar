@@ -10,7 +10,7 @@ struct MeetingsSettingsView: View {
         VStack(alignment: .leading, spacing: 18) {
             SettingsSection("Meetings") {
                 SettingsRow(
-                    "Enable meeting recording",
+                    "Enable meeting recording (Beta)",
                     description: "Record system audio during a meeting and write notes from it. Needs Screen Recording."
                 ) {
                     Toggle("Enable meeting recording", isOn: $settings.meetingsEnabled)
