@@ -203,19 +203,9 @@ struct MeetingDetailView: View {
                 problem(failure)
             }
 
-            if session.liveTranscript.isEmpty, session.liveVolatileText.isEmpty {
-                Text("Nothing yet. Only what this Mac plays is recorded, so your own voice will not appear here.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-            } else {
-                // The volatile tail is dimmed because it is the provider's
-                // current guess and is replaced, not appended to.
-                Text("\(session.liveTranscript)\(Text(session.liveVolatileText).foregroundStyle(.secondary))")
-                    .font(.system(size: 12))
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            // The volatile tail is dimmed inside this view because it is the
+            // provider's current guess and is replaced, not appended to.
+            LiveTranscriptView(session: session)
         }
     }
 

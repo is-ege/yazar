@@ -27,6 +27,11 @@ final class MeetingSession {
     /// it may cover one more upload of a long chunk.
     private static let finalizeTimeout = Duration.seconds(180)
 
+    /// How often accumulated text is moved onto the main actor. Fast enough to
+    /// read as live, slow enough that a long transcript is not laid out again
+    /// for every revision a provider makes.
+    private static let publishInterval = Duration.milliseconds(120)
+
     /// The activity token follows the states that are holding audio, so every
     /// path that ends or abandons a meeting also releases it. A leaked assertion
     /// keeps the Mac awake indefinitely and is visible in `pmset -g assertions`.
@@ -43,9 +48,9 @@ final class MeetingSession {
 
     private(set) var activeMeetingID: UUID?
     private(set) var elapsed: TimeInterval = 0
-    /// Settled text for the segment being recorded. Written into the segment as
-    /// the meeting runs, so a crash costs the last few seconds rather than the
-    /// whole transcript.
+    /// Settled text for the segment being recorded, as the screen last saw it.
+    /// The transcript itself lives in `live`; this is the copy the main actor
+    /// reads, refreshed on a cadence rather than on every revision.
     private(set) var liveTranscript = ""
     /// The provider's guess at what is being said right now, replaced with every
     /// update and never stored. Only Apple Speech produces one; a chunked upload
@@ -60,8 +65,12 @@ final class MeetingSession {
     private let settings: Settings
     private let notesMaker: MeetingNotesMaker
     private let recorder = SystemAudioRecorder()
+    /// Where transcription actually accumulates, off the main actor, so the
+    /// provider is never held up by whatever the screen is drawing.
+    private let live = LiveTranscript()
     private var audioFile: MeetingAudioFile?
     private var transcriptionTask: Task<Void, Never>?
+    private var publishTask: Task<Void, Never>?
     private var finalizeTask: Task<Void, Never>?
     private var activity: (any NSObjectProtocol)?
     private var sleepObserver: (any NSObjectProtocol)?
@@ -171,15 +180,17 @@ final class MeetingSession {
         let transcriber = settings.makeTranscriber(
             for: settings.transcription.defaultRoute
         )
+        live.reset()
         liveTranscript = ""
         liveVolatileText = ""
         transcriptionFailure = nil
-        transcriptionTask = Task { [weak self] in
+        // Detached on purpose. Inheriting this actor would put the loop behind
+        // every redraw of the transcript it is producing, and the text would
+        // arrive on screen later and later as the meeting went on.
+        transcriptionTask = Task.detached(priority: .userInitiated) { [weak self, live] in
             do {
                 for try await update in transcriber.transcribe(audio) {
-                    guard let self else { return }
-                    liveTranscript += update.finalized
-                    liveVolatileText = update.volatile
+                    live.append(update)
                 }
             } catch is CancellationError {
                 return
@@ -187,9 +198,36 @@ final class MeetingSession {
                 // Logged as well as shown. A meeting is long, and the window
                 // that displays this may not have been open when it happened.
                 NSLog("Yazar could not transcribe a meeting: %@", error.localizedDescription)
-                self?.transcriptionFailure = error.localizedDescription
+                await MainActor.run {
+                    self?.transcriptionFailure = error.localizedDescription
+                }
             }
         }
+        startPublishing()
+    }
+
+    /// Moves what has accumulated onto the main actor, on a cadence.
+    ///
+    /// A loop rather than a callback from the transcription task: it can only
+    /// ever be one redraw behind, because a busy main thread simply makes the
+    /// next turn come later and the text it then reads is the newest there is.
+    private func startPublishing() {
+        publishTask?.cancel()
+        publishTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                publishLiveTranscript()
+                try? await Task.sleep(for: Self.publishInterval)
+            }
+        }
+    }
+
+    /// Assigns only what changed: an identical write still invalidates every
+    /// view observing it, which is the cost this whole path exists to avoid.
+    private func publishLiveTranscript() {
+        let snapshot = live.snapshot
+        if liveTranscript != snapshot.finalized { liveTranscript = snapshot.finalized }
+        if liveVolatileText != snapshot.volatile { liveVolatileText = snapshot.volatile }
     }
 
     /// Closes the current segment and files the meeting.
@@ -210,6 +248,8 @@ final class MeetingSession {
         elapsed = 0
 
         guard let id = activeMeetingID else {
+            publishTask?.cancel()
+            publishTask = nil
             state = failure.map(State.failed) ?? .idle
             return
         }
@@ -260,8 +300,11 @@ final class MeetingSession {
         }
 
         transcriptionTask = nil
+        publishTask?.cancel()
+        publishTask = nil
         activeMeetingID = nil
-        liveVolatileText = ""
+        live.clearVolatile()
+        publishLiveTranscript()
         state = failure.map(State.failed) ?? .idle
     }
 
@@ -280,7 +323,7 @@ final class MeetingSession {
     /// is deliberately left out: it is a guess, and it is about to be replaced.
     private func writeTranscript(into meeting: inout Meeting) {
         guard let index = meeting.segments.indices.last else { return }
-        meeting.segments[index].transcript = liveTranscript
+        meeting.segments[index].transcript = live.finalized
     }
 
     /// macOS grants a short window before sleep. Idle sleep is already prevented
