@@ -12,6 +12,7 @@ final class Settings {
         static let soundTheme = "soundTheme"
         static let audioInputID = "audioInputID"
         static let dictationTrigger = "dictationTrigger"
+        static let dictationMode = "dictationMode"
 #if DEBUG
         static let demoMode = "demoMode"
 #endif
@@ -60,6 +61,10 @@ final class Settings {
         didSet { defaults.set(dictationTrigger.rawValue, forKey: Key.dictationTrigger) }
     }
 
+    var dictationMode: DictationMode {
+        didSet { defaults.set(dictationMode.rawValue, forKey: Key.dictationMode) }
+    }
+
 #if DEBUG
     var demoMode: Bool {
         didSet { defaults.set(demoMode, forKey: Key.demoMode) }
@@ -87,6 +92,9 @@ final class Settings {
         dictationTrigger = defaults.string(forKey: Key.dictationTrigger)
             .flatMap(DictationTrigger.init(rawValue:))
             ?? .default
+        dictationMode = defaults.string(forKey: Key.dictationMode)
+            .flatMap(DictationMode.init(rawValue:))
+            ?? .hold
 #if DEBUG
         demoMode = defaults.bool(forKey: Key.demoMode)
 #endif

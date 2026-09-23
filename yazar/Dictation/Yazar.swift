@@ -122,10 +122,26 @@ final class Yazar {
         let isHeld = !ignoresTrigger && settings.dictationTrigger.isHeld(held)
         guard isHeld != triggerHeld else { return }
         triggerHeld = isHeld
-        if isHeld {
+        switch (settings.dictationMode, isHeld) {
+        case (.hold, true):
             pressed()
-        } else {
+        case (.hold, false):
             released()
+        case (.toggle, true):
+            toggled()
+        case (.toggle, false):
+            return
+        }
+    }
+
+    /// In toggle mode each press flips between recording and not, so the press
+    /// that ends a recording does what releasing the key does in hold mode.
+    private func toggled() {
+        switch state {
+        case .warmingUp, .recording:
+            released()
+        default:
+            pressed()
         }
     }
 

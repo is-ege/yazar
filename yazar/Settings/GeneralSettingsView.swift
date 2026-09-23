@@ -12,9 +12,26 @@ struct GeneralSettingsView: View {
             SettingsSection("Activation") {
                 SettingsRow(
                     "Dictation key",
-                    description: "Hold it to dictate. Click to rebind."
+                    description: "Click to rebind."
                 ) {
                     TriggerRecorder(trigger: $settings.dictationTrigger, yazar: yazar)
+                }
+
+                RowDivider()
+
+                SettingsRow(
+                    "Dictation mode",
+                    description: settings.dictationMode == .hold
+                        ? "Hold the key while you speak; let go to transcribe."
+                        : "Press once to start and again to transcribe."
+                ) {
+                    Picker("Dictation mode", selection: $settings.dictationMode) {
+                        ForEach(DictationMode.allCases) { mode in
+                            Text(mode.displayName).tag(mode)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 220, alignment: .trailing)
                 }
             }
 
